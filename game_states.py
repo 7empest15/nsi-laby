@@ -13,9 +13,11 @@ class MenuScreen:
         self.screen = screen
         self.font = pygame.font.Font(None, 74)
         self.state = GameState.MENU
+        self.background = pygame.image.load('assets/background.png')
+        self.background = pygame.transform.scale(self.background, (self.screen.get_width(), self.screen.get_height()))
         
     def render(self):
-        self.screen.fill((0, 0, 0))
+        self.screen.blit(self.background, (0, 0))
         title = self.font.render('Labyrinthe', True, (255, 255, 255))
         start = self.font.render('Appuyez sur ESPACE', True, (255, 255, 255))
         
@@ -29,4 +31,5 @@ class MenuScreen:
     def handle_input(self, event):
         if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
             self.state = GameState.PLAYING
-        return self.state 
+            
+        return self.state

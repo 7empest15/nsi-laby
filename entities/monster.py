@@ -80,7 +80,7 @@ class Monster(Entity):
                     return path + [next_pos]
                 
                 # Sinon, continuer la recherche
-                if (next_pos not in visited and 
+                if (next_pos not in visited and
                     0 <= next_pos[0] < labyrinthe.largeur and 
                     0 <= next_pos[1] < labyrinthe.hauteur):
                     
@@ -110,14 +110,14 @@ class Monster(Entity):
         dy = target_pos[1] - self.pos[1]
         distance = math.sqrt(dx*dx + dy*dy)
 
-        # Vérifier si on peut attaquer (adjacent et pas de mur entre)
+        # Vérifier si on peut attaquer (adjacent and pas de mur entre)
         if distance <= self.range and self.can_attack(self.target, labyrinthe):
             combat_logger.log(f"Monstre à portée d'attaque - Distance: {distance:.2f}, Position: {self.pos}")
             if current_time - self.last_attack >= self.attack_cooldown:
                 self.start_attack(self.target)
             return
 
-        # Trouver et suivre le chemin
+        # Trouver and suivre le chemin
         if not self.path:
             self.path = self.find_path(target_pos, labyrinthe)
             if not self.path:  # Si pas de chemin trouvé, essayer de se rapprocher
@@ -149,15 +149,19 @@ class Monster(Entity):
         return (dx <= 1 and dy <= 1) and not self.is_wall_between(target.pos, labyrinthe)
 
     def is_wall_between(self, target_pos, labyrinthe):
-        # Vérifier s'il y a un mur entre la position actuelle et la cible
+        # Vérifier s'il y a un mur entre la position actuelle and la cible
         if self.pos[0] == target_pos[0]:  # Même colonne
             y = min(self.pos[1], target_pos[1])
-            return (labyrinthe.laby[self.pos[0]][y].murS if self.pos[1] < target_pos[1] 
-                   else labyrinthe.laby[self.pos[0]][target_pos[1]].murN)
+            if self.pos[1] < target_pos[1]:  # Cible en dessous
+                return labyrinthe.laby[self.pos[0]][self.pos[1]].murS
+            else:  # Cible au-dessus
+                return labyrinthe.laby[self.pos[0]][target_pos[1]].murN
         elif self.pos[1] == target_pos[1]:  # Même ligne
             x = min(self.pos[0], target_pos[0])
-            return (labyrinthe.laby[x][self.pos[1]].murE if self.pos[0] < target_pos[0]
-                   else labyrinthe.laby[target_pos[0]][self.pos[1]].murW)
+            if self.pos[0] < target_pos[0]:  # Cible à droite
+                return labyrinthe.laby[self.pos[0]][self.pos[1]].murE
+            else:  # Cible à gauche
+                return labyrinthe.laby[target_pos[0]][self.pos[1]].murW
         return True  # Séparés en diagonale
 
     def start_attack(self, target):
@@ -210,7 +214,7 @@ class Caecior(Monster):
     def __init__(self, hp, time, atk_rate, atk, speed, range, pos_player):
         super().__init__(hp, time, atk_rate, atk, speed, range, pos_player)
         self.fog_active = False
-        self.fog_duration = 15000  # 15 secondes en millisecondes
+        self.fog_duration = 10000  # 10 secondes en millisecondes
         self.fog_start_time = 0
         self.attack_cooldown = 3000  # 3 secondes entre les attaques pour le Caecior
         self.color = (255, 165, 0, 255)  # Orange avec alpha

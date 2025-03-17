@@ -1,13 +1,15 @@
 from .entity import Entity
+from abilities.abilities import Abilities, AbilityType
 import time
 from utils.logger import combat_logger
 
 class Player(Entity):
-    def __init__(self, hp, time, atk_rate, atk, speed, range, pos_player):
+    def __init__(self, hp, time, atk_rate, atk, speed, range, pos_player, abilities=None):
         super().__init__(hp, time, atk_rate, atk, speed, range, pos_player)
         self.last_attack = 0
         self.attack_cooldown = 1000  # 1 seconde entre les attaques
         self.is_attacking = False
+        self.abilities = Abilities(abilities)
 
     def can_attack(self, target, labyrinthe):
         # Vérifier si la cible est adjacente
@@ -17,13 +19,15 @@ class Player(Entity):
         # Vérifier s'il y a un mur entre le joueur et la cible
         if dx <= 1 and dy <= 1:
             if self.pos[0] == target.pos[0]:  # Même colonne
-                y = min(self.pos[1], target.pos[1])
-                return not (labyrinthe.laby[self.pos[0]][y].murS if self.pos[1] < target.pos[1] 
-                          else labyrinthe.laby[self.pos[0]][target.pos[1]].murN)
+                if self.pos[1] < target.pos[1]:  # Cible en dessous
+                    return not labyrinthe.laby[self.pos[0]][self.pos[1]].murS
+                else:  # Cible au-dessus
+                    return not labyrinthe.laby[self.pos[0]][target.pos[1]].murN
             elif self.pos[1] == target.pos[1]:  # Même ligne
-                x = min(self.pos[0], target.pos[0])
-                return not (labyrinthe.laby[x][self.pos[1]].murE if self.pos[0] < target.pos[0]
-                          else labyrinthe.laby[target.pos[0]][self.pos[1]].murW)
+                if self.pos[0] < target.pos[0]:  # Cible à droite
+                    return not labyrinthe.laby[self.pos[0]][self.pos[1]].murE
+                else:  # Cible à gauche
+                    return not labyrinthe.laby[target.pos[0]][self.pos[1]].murW
         return False
 
     def try_attack(self, enemies, labyrinthe):
@@ -45,3 +49,7 @@ class Player(Entity):
                 return
         
         combat_logger.log("Aucune cible à portée d'attaque")
+
+    def tick(self, level, screen):
+        self.abilities.apply(self, level, screen)
+        super().tick()

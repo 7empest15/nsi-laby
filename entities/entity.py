@@ -11,8 +11,11 @@ class Entity:
     def death(self):
         print('JORDAN T MORT')
 
-    def heal(self, hp, heal):
-        self.hp += heal
+    def heal(self,  heal):
+        target_hp = self.hp + heal
+        if target_hp > 100:
+            target_hp = 100
+        self.hp = target_hp
 
     def decrease_hp(self, damage):
         print(f"[DEBUG] decrease_hp appelé - HP avant: {self.hp}, Dégâts reçus: {damage}")

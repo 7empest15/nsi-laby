@@ -1,8 +1,10 @@
 from render import render
 from utils.event_dispatcher import dispatcher
 from game_states import GameState, MenuScreen
+from abilities.abilities import AbilityType
 import pygame
 import time
+import random
 
 class Game:
     def __init__(self, player, level, screen):
@@ -14,6 +16,8 @@ class Game:
         self.menu = MenuScreen(screen)
         self.start_time = None
         self.font = pygame.font.Font(None, 36)
+        self.notification = None
+        self.notification_time = 0
 
     def start(self):
         while self.running:
@@ -43,7 +47,7 @@ class Game:
 
     def tick(self):
         self.level.tick()
-        self.player.tick()
+        self.player.tick(self.level, self.screen)
         
         # Gérer l'attaque du joueur avec la touche ESPACE
         keys = pygame.key.get_pressed()
@@ -53,6 +57,14 @@ class Game:
         # Vérifier la condition de victoire
         if self.player.pos == list(self.level.exit_coordonnee):
             self.state = GameState.WIN
+
+        for i in range(len(self.level.medkits)):
+            medkit = self.level.medkits[i - 1]
+            x, y = medkit.pos[0], medkit.pos[1]
+            if self.player.pos == list((x, y)):
+                self.player.heal(medkit.amount)
+                self.level.medkits.pop(i - 1)
+                
         
         # Vérifier les conditions de défaite
         if self.player.hp <= 0 or self.level.time_remaining <= 0:
@@ -65,7 +77,7 @@ class Game:
             enemy.tick()
 
     def render_game(self):
-        result = render(self.level.labyrinthe, self.screen, 20, 5, self.player, self.level.enemies)
+        result = render(self.level.labyrinthe, self.screen, 20, 5, self.player, self.level.enemies, self.level.medkits)
         
         # Render timer, HP and stats
         timer_text = self.font.render(f'Time: {int(self.level.time_remaining)}s', True, (255, 255, 255))
@@ -77,6 +89,13 @@ class Game:
         self.screen.blit(hp_text, (10, 50))
         self.screen.blit(level_text, (10, 90))
         self.screen.blit(kills_text, (10, 130))
+        
+        # Render notification
+        if self.notification:
+            notification_text = self.font.render(self.notification, True, (255, 255, 0))
+            self.screen.blit(notification_text, (self.screen.get_width() // 2 - notification_text.get_width() // 2, 10))
+            if time.time() - self.notification_time > 3:  # Afficher la notification pendant 3 secondes
+                self.notification = None
         
         pygame.display.flip()
         return result
@@ -112,6 +131,7 @@ class Game:
 
     def next_level(self):
         self.level.next_level()
+        self.add_random_ability()  # Add a random positive ability
         self.state = GameState.PLAYING
         self.start_time = time.time()
 
@@ -119,6 +139,7 @@ class Game:
         # Reset player position and stats
         self.player.pos = list(self.level.player_coordonnee)
         self.player.hp = 100
+        self.player.abilities.abilities = []  # Reset abilities
         
         # Reset level
         self.level.reset()
@@ -126,3 +147,16 @@ class Game:
         # Reset game state
         self.state = GameState.PLAYING
         self.start_time = time.time()
+
+    def add_random_ability(self):
+        positive_abilities = [
+            AbilityType.FAST_ATTACK,
+            AbilityType.EXTRA_DAMAGE,
+            AbilityType.SHOW_PATH
+        ]
+        new_ability = random.choice(positive_abilities)
+        print(f"New ability: {new_ability}")
+        if new_ability not in self.player.abilities.abilities:
+            self.player.abilities.abilities.append(new_ability)
+            self.notification = f"Nouvelle capacité: {new_ability.value.replace('_', ' ').capitalize()}"
+            self.notification_time = time.time()
